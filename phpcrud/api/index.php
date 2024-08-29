@@ -5,7 +5,7 @@ header("Access-Control-Allow-Origin:* ");
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: *");
 
-$db_conn = mysqli_connect("localhost", "root", "H&ptiot2024", "user");
+$db_conn = mysqli_connect("localhost", "root", "H&ptiot2024", "reactphp");
 if ($db_conn === false) {
   die("ERROR: Could Not Connect" . mysqli_connect_error());
 }
@@ -20,7 +20,7 @@ switch ($method) {
       $json_array = array();
       $userid = $path[4];
 
-      $getuserrow = mysqli_query($db_conn, "SELECT * FROM users WHERE userid='$userid' ");
+      $getuserrow = mysqli_query($db_conn, "SELECT * FROM tbl_user WHERE userid='$userid' ");
       while ($userrow = mysqli_fetch_array($getuserrow)) {
         $json_array['rowUserdata'] = array('id' => $userrow['userid'], 'username' => $userrow['username'], 'email' => $userrow['useremail'], 'status' => $userrow['status'], );
       }
@@ -29,7 +29,7 @@ switch ($method) {
 
     } else {
 
-      $alluser = mysqli_query($db_conn, "SELECT * FROM users");
+      $alluser = mysqli_query($db_conn, "SELECT * FROM tbl_user");
       if (mysqli_num_rows($alluser) > 0) {
         while ($row = mysqli_fetch_array($alluser)) {
           $json_array["userdata"][] = array("id" => $row['userid'], "username" => $row["username"], "email" => $row["useremail"], "status" => $row["status"]);
@@ -50,7 +50,7 @@ switch ($method) {
     $username = $userpostdata->username;
     $useremail = $userpostdata->email;
     $status = $userpostdata->status;
-    $result = mysqli_query($db_conn, "INSERT INTO users (username, useremail, status) 
+    $result = mysqli_query($db_conn, "INSERT INTO tbl_user (username, useremail, status) 
         VALUES('$username', '$useremail', '$status')");
 
     if ($result) {
@@ -70,7 +70,7 @@ switch ($method) {
     $useremail = $userUpdate->email;
     $status = $userUpdate->status;
 
-    $updateData = mysqli_query($db_conn, "UPDATE users SET username='$username', useremail='$useremail', status='$status' WHERE userid='$userid'  ");
+    $updateData = mysqli_query($db_conn, "UPDATE tbl_user SET username='$username', useremail='$useremail', status='$status' WHERE userid='$userid'  ");
     if ($updateData) {
       echo json_encode(["success" => "User Record Update Successfully"]);
       return;
@@ -84,7 +84,7 @@ switch ($method) {
   case "DELETE":
     $path = explode('/', $_SERVER["REQUEST_URI"]);
     //echo "message userid------".$path[4]; die;
-    $result = mysqli_query($db_conn, "DELETE FROM users WHERE userid= '$path[4]' ");
+    $result = mysqli_query($db_conn, "DELETE FROM tbl_user WHERE userid= '$path[4]' ");
     if ($result) {
       echo json_encode(["success" => "User Record Deleted Successfully"]);
       return;

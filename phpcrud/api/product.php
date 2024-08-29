@@ -5,7 +5,7 @@ header("Access-Control-Allow-Origin:* ");
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: *");
 
-$db_conn = mysqli_connect("localhost", "root", "H&ptiot2024", "sensor");
+$db_conn = mysqli_connect("localhost", "root", "H&ptiot2024", "reactphp");
 if ($db_conn === false) {
   die("ERROR: Could Not Connect" . mysqli_connect_error());
 }
@@ -17,67 +17,83 @@ switch ($method) {
     $path = explode('/', $_SERVER['REQUEST_URI']);
 
     if (isset($path[4]) && is_numeric($path[4])) {
-      echo "Get Api Single Row";
-      die;
+      $json_array = array();
+      $userid = $path[4];
+
+      $getuserrow = mysqli_query($db_conn, "SELECT * FROM tbl_user WHERE userid='$userid' ");
+      while ($userrow = mysqli_fetch_array($getuserrow)) {
+        $json_array['rowUserdata'] = array('id' => $userrow['userid'], 'username' => $userrow['username'], 'email' => $userrow['useremail'], 'status' => $userrow['status'], );
+      }
+      echo json_encode($json_array['rowUserdata']);
+      return;
+
     } else {
-      //echo "return all Data"; die;
-      $destination = $_SERVER['DOCUMENT_ROOT'] . "/reactcrudphp" . "/";
-      $allproduct = mysqli_query($db_conn, "SELECT * FROM users");
-      if (mysqli_num_rows($allproduct) > 0) {
-        while ($row = mysqli_fetch_array($allproduct)) {
-          $json_array["productdata"][] = array(
-            "id" => $row['p_id'],
-            "ptitle" => $row["ptitle"],
-            "pprice" => $row["pprice"],
-            "pimage" => $row["pfile"],
-            "status" => $row["pstatus"]
-          );
+
+      $alluser = mysqli_query($db_conn, "SELECT * FROM tbl_user");
+      if (mysqli_num_rows($alluser) > 0) {
+        while ($row = mysqli_fetch_array($alluser)) {
+          $json_array["userdata"][] = array("id" => $row['userid'], "username" => $row["username"], "email" => $row["useremail"], "status" => $row["status"]);
         }
-        echo json_encode($json_array["productdata"]);
+        echo json_encode($json_array["userdata"]);
         return;
       } else {
-        echo json_encode(["result" => "please check the Data"]);
+        echo json_encode(["result" => "Please check the Data"]);
         return;
       }
-
-
     }
-
-
     break;
 
   case "POST":
-    if (isset($_FILES['pfile'])) {
-      $ptitle = $_POST['ptitle'];
-      $pprice = $_POST['pprice'];
-      $pfile = time() . $_FILES['pfile']['name'];
-      $pfile_temp = $_FILES['pfile']['tmp_name'];
-      $destination = $_SERVER['DOCUMENT_ROOT'] . '/reactcrudphp' . "/" . $pfile;
+    $userpostdata = json_decode(file_get_contents("php://input"));
+    //echo "sucess data";
+    //print_r($userpostdata); die;
+    $username = $userpostdata->username;
+    $useremail = $userpostdata->email;
+    $status = $userpostdata->status;
+    $result = mysqli_query($db_conn, "INSERT INTO tbl_user (username, useremail, status) 
+        VALUES('$username', '$useremail', '$status')");
 
-      $result = mysqli_query($db_conn, "INSERT INTO users (ptitle, pprice,pfile, pstatus)
-        VALUES('$ptitle','$pprice','$pfile','1')");
-
-      if ($result) {
-        move_uploaded_file($pfile_temp, $destination);
-        echo json_encode(["success" => "Product Inserted Successfully"]);
-        return;
-      } else {
-        echo json_encode(["success" => "Product Not Inserted!"]);
-        return;
-      }
-
+    if ($result) {
+      echo json_encode(["success" => "User Added Successfully"]);
+      return;
     } else {
-      echo json_encode(["success" => "Data not in Correct Format"]);
+      echo json_encode(["success" => "Please Check the User Data!"]);
+      return;
+    }
+    break;
+
+  case "PUT":
+    $userUpdate = json_decode(file_get_contents("php://input"));
+
+    $userid = $userUpdate->id;
+    $username = $userUpdate->username;
+    $useremail = $userUpdate->email;
+    $status = $userUpdate->status;
+
+    $updateData = mysqli_query($db_conn, "UPDATE tbl_user SET username='$username', useremail='$useremail', status='$status' WHERE userid='$userid'  ");
+    if ($updateData) {
+      echo json_encode(["success" => "User Record Update Successfully"]);
+      return;
+    } else {
+      echo json_encode(["success" => "Please Check the User Data!"]);
+      return;
+    }
+    // print_r($userUpdate); die;
+    break;
+
+  case "DELETE":
+    $path = explode('/', $_SERVER["REQUEST_URI"]);
+    //echo "message userid------".$path[4]; die;
+    $result = mysqli_query($db_conn, "DELETE FROM tbl_user WHERE userid= '$path[4]' ");
+    if ($result) {
+      echo json_encode(["success" => "User Record Deleted Successfully"]);
+      return;
+    } else {
+      echo json_encode(["Please Check the User Data!"]);
       return;
     }
 
     break;
-
-  case "DELETE":
-
-    break;
-
-
 
 }
 
